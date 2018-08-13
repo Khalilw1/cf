@@ -64,7 +64,8 @@ def content(path: str) -> bytes:
     with open(path, 'rb') as f:
         return f.read()
 
-def test(contest: str, problem: str, binary: str):
+
+def test(contest: str, problem: str, binary: str) -> bool:
     """Test a binary against a const problem's IO
 
     The test spawns a subprocess and runs the binary giving it the input
@@ -76,14 +77,29 @@ def test(contest: str, problem: str, binary: str):
     path = '{}/.cf-samples/{}/{}'.format(
         os.path.expanduser('~'), contest, problem)
     directory = os.fsencode(path)
+
+    actual = {}
+    expected = {}
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
-        if not filename.endswith('in'):
+        if filename.endswith('.out'):
+            print(filename)
+            expected[filename.split('.')[0]] = (
+                content('{}/{}'.format(path, filename)).decode('utf-8'))
+        if not filename.endswith('.in'):
             continue
         print(filename)
         result = subprocess.run(binary, input=content(
             '{}/{}'.format(path, filename)), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(result.stdout.decode('utf-8'))
+        actual[filename.split('.')[0]] = (result.stdout.decode('utf-8'))
+
+    verdict = True
+    for key in actual:
+        # TODO(khalil): Introduce better output checker with possibility of custom checker in place.
+        #               It could also take advantage of diff.
+        cmp_width = min(len(actual[key]), len(expected[key]))
+        verdict &= (actual[key][:cmp_width] == expected[key][:cmp_width])
+    return verdict
 
 
 if __name__ == '__main__':
