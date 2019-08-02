@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 
@@ -102,7 +103,20 @@ def test(contest: str, problem: str, binary: str) -> bool:
     return verdict
 
 
+def get_contests():
+    response = json.loads(fetch('https://codeforces.com/api/contest.list'))
+    status = response['status']
+    if status != 'OK':
+        print('An error occured while fetching the list of contests.')
+        return
+    contests = response['result']
+    upcoming = filter(lambda contest: contest['phase'] == 'BEFORE', contests)
+    
+    contests.sort(key=lambda contest: contest['startTimeSeconds'], reverse=True)
+    print(contests[:5])
+    
 if __name__ == '__main__':
     # EXPERIMENTAL: Sample usage
-    store('1006', 'A', parse(fetch('https://codeforces.com/contest/1006/problem/A')))
-    test('1006', 'A', '{}/{}'.format(os.path.expanduser('~'), 'dev/lab/a.out'))
+    # store('1006', 'A', parse(fetch('https://codeforces.com/contest/1006/problem/A')))
+    # test('1006', 'A', '{}/{}'.format(os.path.expanduser('~'), 'dev/lab/a.out'))
+    get_contests()
